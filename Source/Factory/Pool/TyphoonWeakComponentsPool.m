@@ -10,32 +10,23 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #import "TyphoonWeakComponentsPool.h"
-#import "NSObject+DeallocNotification.h"
 
 @implementation TyphoonWeakComponentsPool
 {
-    NSMutableDictionary *dictionaryWithNonRetainedObjects;
+    NSMapTable *dictionaryWithNonRetainedObjects;
 }
 
 - (id)init
 {
     self = [super init];
     if (self) {
-        CFDictionaryValueCallBacks callbacks = {0, NULL, NULL, NULL, NULL};
-        dictionaryWithNonRetainedObjects =
-            (__bridge_transfer id) CFDictionaryCreateMutable(NULL, 0, &kCFTypeDictionaryKeyCallBacks, &callbacks);
+        dictionaryWithNonRetainedObjects = [NSMapTable mapTableWithKeyOptions:NSPointerFunctionsStrongMemory valueOptions:NSPointerFunctionsWeakMemory];
     }
     return self;
 }
 
 - (void)setObject:(id)object forKey:(id <NSCopying>)aKey
 {
-    __weak __typeof (dictionaryWithNonRetainedObjects) weakDict = dictionaryWithNonRetainedObjects;
-
-    [object setDeallocNotificationInBlock:^{
-        [weakDict removeObjectForKey:aKey];
-    }];
-
     [dictionaryWithNonRetainedObjects setObject:object forKey:aKey];
 }
 
@@ -54,7 +45,7 @@
 
 - (NSArray *)allValues
 {
-    return [dictionaryWithNonRetainedObjects allValues];
+    return [[dictionaryWithNonRetainedObjects keyEnumerator] allObjects];
 }
 
 - (void)removeAllObjects
